@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mail, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 import { AppNav } from "@/components/app-nav";
 import { Button } from "@/components/ui/button";
@@ -263,7 +263,7 @@ export default function SettingsView() {
 
           <p className="text-slate-500 text-xs">
             Everyone listed here gets the same digest. Save after changing the list.{" "}
-            <strong>Send digest now</strong> emails everyone last saved in the database.{" "}
+            <strong>Send now</strong> emails everyone last saved in the database.{" "}
             Each digest email has two deadline lists: one including payroll, and one excluding
             payroll. <strong>Send test (draft)</strong> uses the list above even if you have not
             saved yet.
@@ -279,8 +279,7 @@ export default function SettingsView() {
               onClick={() => void sendDigestNow()}
               type="button"
             >
-              <Mail aria-hidden className="mr-2 size-4" />
-              {sendingNow ? "Sending…" : "Send digest now"}
+              {sendingNow ? "Sending…" : "Send now"}
             </Button>
             <Button
               disabled={loading || emailBusy || !canSendTest}

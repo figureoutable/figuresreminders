@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Mail, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -65,8 +65,7 @@ export function AppNav({ className }: { className?: string }) {
             size="sm"
             type="button"
           >
-            <Mail aria-hidden className="mr-2 size-4" />
-            {sendingDigest ? "Sending…" : "Send digest now"}
+            {sendingDigest ? "Sending…" : "Send now"}
           </Button>
           <Link
             className={cn(

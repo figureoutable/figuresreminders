@@ -11,12 +11,24 @@ const MAX_RECIPIENTS = 30;
 const MAX_NAME_LEN = 120;
 const MAX_EMAIL_LEN = 254;
 
-const SIMPLE_EMAIL =
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export function isValidEmail(raw: string): boolean {
   const e = trimStr(raw, MAX_EMAIL_LEN).toLowerCase();
-  return Boolean(e && SIMPLE_EMAIL.test(e));
+  if (!e || e.includes(" ") || e.includes("..")) {
+    return false;
+  }
+  const at = e.indexOf("@");
+  if (at < 1 || at !== e.lastIndexOf("@")) {
+    return false;
+  }
+  const local = e.slice(0, at);
+  const domain = e.slice(at + 1);
+  if (!local || !domain || !domain.includes(".")) {
+    return false;
+  }
+  if (local.length > 64 || domain.length > 253) {
+    return false;
+  }
+  return true;
 }
 
 function trimStr(v: unknown, max: number): string {
@@ -40,7 +52,7 @@ export function parseDigestRecipients(raw: unknown): DigestRecipient[] {
       (row as { email?: unknown }).email,
       MAX_EMAIL_LEN
     ).toLowerCase();
-    if (!email || !SIMPLE_EMAIL.test(email)) {
+    if (!email || !isValidEmail(email)) {
       continue;
     }
     const name = trimStr((row as { name?: unknown }).name, MAX_NAME_LEN);
@@ -91,7 +103,7 @@ export function validateRecipientsPayload(
     if (!email) {
       return { ok: false, error: "Every recipient needs an email address." };
     }
-    if (!SIMPLE_EMAIL.test(email)) {
+    if (!isValidEmail(email)) {
       return { ok: false, error: `Invalid email: ${email}` };
     }
     recipients.push({ name, email });

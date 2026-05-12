@@ -19,30 +19,64 @@ export default function SettingsView() {
   const [testing, setTesting] = useState(false);
   const [sendingNow, setSendingNow] = useState(false);
   const emailBusy = sendingNow || testing;
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [addHint, setAddHint] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const res = await fetch("/api/settings");
-      const j = (await res.json()) as {
-        settings?: { digest_recipients?: DigestRecipient[] };
-      };
-      setRecipients(j.settings?.digest_recipients ?? []);
-      setLoading(false);
+      try {
+        const res = await fetch("/api/settings");
+        const j = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          settings?: { digest_recipients?: DigestRecipient[] };
+        };
+        if (!cancelled) {
+          if (!res.ok) {
+            setFetchError(
+              typeof j.error === "string"
+                ? j.error
+                : "Could not load settings. You can still try adding emails and saving."
+            );
+            setRecipients([]);
+          } else {
+            setFetchError(null);
+            setRecipients(j.settings?.digest_recipients ?? []);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setFetchError(
+            "Network error loading settings. Check your connection; you can still add emails and save."
+          );
+          setRecipients([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function addRecipient() {
+    setAddHint(null);
     const email = draftEmail.trim().toLowerCase();
     if (!isValidEmail(email)) {
-      alert("Enter a valid email address.");
+      setAddHint(
+        "That doesn’t look like a valid email (need something like name@company.com)."
+      );
       return;
     }
     if (recipients.some((r) => r.email.toLowerCase() === email)) {
-      alert("That email is already on the list.");
+      setAddHint("That address is already on the list.");
       return;
     }
     if (recipients.length >= 30) {
-      alert("You can add at most 30 recipients.");
+      setAddHint("You can add at most 30 recipients.");
       return;
     }
     setRecipients((prev) => [...prev, { name: "", email }]);
@@ -144,6 +178,15 @@ export default function SettingsView() {
         <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="font-semibold text-lg">Email settings</h2>
 
+          {fetchError ? (
+            <div
+              className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950 text-sm"
+              role="status"
+            >
+              {fetchError}
+            </div>
+          ) : null}
+
           <div className="space-y-2">
             <Label>People on the digest</Label>
             {loading ? (
@@ -187,7 +230,10 @@ export default function SettingsView() {
                 className="max-w-md bg-white"
                 disabled={loading}
                 id="draft-email"
-                onChange={(e) => setDraftEmail(e.target.value)}
+                onChange={(e) => {
+                  setDraftEmail(e.target.value);
+                  setAddHint(null);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -199,6 +245,11 @@ export default function SettingsView() {
                 value={draftEmail}
               />
             </div>
+            {addHint ? (
+              <p className="mt-2 text-amber-800 text-sm" role="status">
+                {addHint}
+              </p>
+            ) : null}
             <Button
               className="mt-3"
               disabled={loading}

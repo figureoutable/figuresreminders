@@ -13,7 +13,7 @@ function fmt(d: Date): string {
 }
 
 function urgentSection(d: GeneratedDeadline): boolean {
-  return d.daysUntilDeadline < 0 || d.daysUntilDeadline <= 14;
+  return d.daysUntilDeadline < 0 || d.daysUntilDeadline <= 30;
 }
 
 function dueThisMonthSection(d: GeneratedDeadline, today: Date): boolean {
@@ -105,7 +105,7 @@ export function buildDigestHtml(params: {
 
   const html = `<div style="font-family:Inter,system-ui,sans-serif;color:#0f172a;line-height:1.5;">
 <p style="margin:0 0 16px;">Good morning — here is your deadline digest for the week starting <strong>${fmt(today)}</strong>.</p>
-${tableSection("Urgent (due within 14 days)", "#dc2626", urgent)}
+${tableSection("Urgent (due within 30 days)", "#dc2626", urgent)}
 ${tableSection("Due this month", "#d97706", month)}
 ${tableSection("Upcoming", "#0d9488", upcoming)}
 <h3 style="margin-top:28px;color:#0f172a;">Action Required</h3>

@@ -354,10 +354,10 @@ export default function DashboardView({
                         <TableCell>
                           <Badge className={badgeVariant(u)} variant="outline">
                             {u === "red"
-                              ? "0–14 days"
+                              ? "0–30 days"
                               : u === "amber"
-                                ? "15–30 days"
-                                : "31+ days"}
+                                ? "31–90 days"
+                                : "91+ days"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">

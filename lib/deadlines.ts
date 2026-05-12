@@ -280,10 +280,10 @@ export function generateDeadlines(
 export type UrgencyBadge = "red" | "amber" | "green";
 
 export function urgencyFromDays(days: number): UrgencyBadge {
-  if (days <= 14) {
+  if (days <= 30) {
     return "red";
   }
-  if (days <= 30) {
+  if (days <= 90) {
     return "amber";
   }
   return "green";

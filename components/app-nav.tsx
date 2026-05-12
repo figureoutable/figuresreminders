@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Home, Mail, Settings } from "lucide-react";
+import { Mail, Settings } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -34,8 +34,6 @@ export function AppNav({ className }: { className?: string }) {
     }
   }
 
-  const onHome = pathname === "/";
-
   return (
     <header
       className={cn(
@@ -48,20 +46,18 @@ export function AppNav({ className }: { className?: string }) {
           <Link href="/" className="truncate font-semibold text-[#0F172A] text-lg">
             Figures Reminders
           </Link>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <Link
-            aria-current={onHome ? "page" : undefined}
-            aria-label="Home"
+            aria-current={pathname === "/" ? "page" : undefined}
             className={cn(
-              buttonVariants({ variant: "ghost", size: "icon-sm" }),
-              "shrink-0 text-[#0F172A]",
-              onHome && "bg-slate-200/80"
+              buttonVariants({ size: "sm" }),
+              "bg-[#0D9488] text-white hover:bg-[#0f766e]"
             )}
             href="/"
           >
-            <Home className="size-4" />
+            Home
           </Link>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <Button
             className="inline-flex items-center bg-[#0D9488] text-white hover:bg-[#0f766e]"
             disabled={sendingDigest}

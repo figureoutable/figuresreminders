@@ -146,7 +146,7 @@ export default function DashboardView({
   }, [initialRows, filter, query, showCompleted]);
 
   async function confirmAck(row: DashboardRowDTO) {
-    const by = initials.trim().slice(0, 20);
+    const by = initials.trim().slice(0, 10);
     if (!by) {
       return;
     }
@@ -318,12 +318,14 @@ export default function DashboardView({
                                 </p>
                                 <div className="space-y-1.5">
                                   <Label className="text-xs" htmlFor={`who-${row.key}`}>
-                                    Your initials or name
+                                    Initials
                                   </Label>
                                   <Input
+                                    autoComplete="off"
                                     id={`who-${row.key}`}
-                                    maxLength={20}
+                                    maxLength={10}
                                     onChange={(e) => setInitials(e.target.value)}
+                                    placeholder="e.g. JL"
                                     value={initials}
                                   />
                                 </div>

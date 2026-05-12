@@ -74,7 +74,8 @@ function labelsForVatAnchor(
   if (anchor == null || anchor < 1 || anchor > 12) {
     return null;
   }
-  return vatQuarterEndMonths(anchor).map((m) => MONTH_NAMES[m]).join(", ");
+  const months = [...vatQuarterEndMonths(anchor)].sort((a, b) => a - b);
+  return months.map((m) => MONTH_NAMES[m]).join(", ");
 }
 
 function emptyFields(): ParsedClientFields {
@@ -751,7 +752,7 @@ export default function ClientsView({
                   <TableHead>Confirmation</TableHead>
                   <TableHead>Accounts filing</TableHead>
                   <TableHead>Self Assessment</TableHead>
-                  <TableHead className="min-w-[11rem]">VAT (quarter ends)</TableHead>
+                  <TableHead className="min-w-[12rem]">VAT quarter-end months</TableHead>
                   <TableHead>Payroll</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -799,31 +800,8 @@ export default function ClientsView({
                             })
                           : "—"}
                       </TableCell>
-                      <TableCell className="max-w-[16rem] align-top text-sm leading-snug">
-                        {c.vat_quarter_end_month != null &&
-                        c.vat_quarter_end_month >= 1 &&
-                        c.vat_quarter_end_month <= 12 ? (
-                          <div className="space-y-1">
-                            <div>
-                              <span className="text-slate-500 text-xs">
-                                Saved anchor (month you chose):{" "}
-                              </span>
-                              <span className="font-medium text-[#0F172A]">
-                                {MONTH_NAMES[c.vat_quarter_end_month]}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-slate-500 text-xs">
-                                All VAT period ends (last day of each month):{" "}
-                              </span>
-                              <span className="font-medium text-[#0F172A]">
-                                {labelsForVatAnchor(c.vat_quarter_end_month)}
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          "—"
-                        )}
+                      <TableCell className="max-w-[18rem] align-top text-sm leading-snug">
+                        {labelsForVatAnchor(c.vat_quarter_end_month) ?? "—"}
                       </TableCell>
                       <TableCell>{c.payroll_active ? "Yes" : "No"}</TableCell>
                       <TableCell className="text-right">

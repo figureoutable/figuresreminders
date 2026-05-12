@@ -6,7 +6,7 @@ import {
 } from "@/lib/ack";
 import { toDashboardDTO } from "@/lib/dashboard-serialize";
 import { generateDeadlines } from "@/lib/deadlines";
-import { createServiceSupabase } from "@/lib/supabase/admin";
+import { tryCreateServiceSupabase } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +35,17 @@ function computeStats(rows: DeadlineViewRow[]) {
 }
 
 export default async function HomePage() {
-  const supabase = createServiceSupabase();
+  const supabase = tryCreateServiceSupabase();
+  if (!supabase) {
+    return (
+      <DashboardView
+        initialRows={[]}
+        loadError="Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to your host’s environment variables (e.g. Vercel → Project → Settings → Environment Variables), then redeploy."
+        stats={{ overdue: 0, dueThisMonth: 0, upcoming: 0 }}
+      />
+    );
+  }
+
   const [{ data: clients, error: clientsError }, { data: acks, error: acksError }] =
     await Promise.all([
       supabase.from("clients").select("*").order("created_at", { ascending: false }),
@@ -43,7 +53,14 @@ export default async function HomePage() {
     ]);
 
   if (clientsError || acksError) {
-    throw new Error(clientsError?.message ?? acksError?.message);
+    const detail = clientsError?.message ?? acksError?.message ?? "Unknown error";
+    return (
+      <DashboardView
+        initialRows={[]}
+        loadError={`Could not load data from Supabase (${detail}). Check that migrations in supabase/migrations have been applied to your project and that the service role key is correct.`}
+        stats={{ overdue: 0, dueThisMonth: 0, upcoming: 0 }}
+      />
+    );
   }
 
   const deadlines = generateDeadlines(clients ?? []);

@@ -59,9 +59,12 @@ function badgeVariant(u: UrgencyBadge): string {
 export default function DashboardView({
   initialRows,
   stats,
+  loadError,
 }: {
   initialRows: DashboardRowDTO[];
   stats: { overdue: number; dueThisMonth: number; upcoming: number };
+  /** When set, dashboard still renders but data failed to load (config / DB). */
+  loadError?: string | null;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<FilterId>("all");
@@ -188,6 +191,15 @@ export default function DashboardView({
     <div className="min-h-screen bg-[#FAFAFA] text-[#0F172A]">
       <AppNav />
       <main className="mx-auto max-w-6xl space-y-3 px-4 py-6 sm:px-6">
+        {loadError ? (
+          <div
+            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 text-sm"
+            role="alert"
+          >
+            <p className="font-semibold">Could not load dashboard data</p>
+            <p className="mt-1 text-amber-900/90">{loadError}</p>
+          </div>
+        ) : null}
         <SpotlightCards
           className="bg-[#FAFAFA] px-0 pt-6 pb-2"
           heading="Deadline snapshot (unacknowledged only)"

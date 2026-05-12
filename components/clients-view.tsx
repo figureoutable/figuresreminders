@@ -233,10 +233,12 @@ function ClientFieldGrid({
 export default function ClientsView({
   initialClients,
   editingClient,
+  loadError,
 }: {
   initialClients: ClientEntity[];
   /** When opening `/clients?edit=…`, the server passes the row to hydrate the form. */
   editingClient: ClientEntity | null;
+  loadError?: string | null;
 }) {
   const router = useRouter();
   const [smartText, setSmartText] = useState("");
@@ -507,6 +509,15 @@ export default function ClientsView({
     <div className="min-h-screen bg-[#FAFAFA] text-[#0F172A]">
       <AppNav />
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-6">
+        {loadError ? (
+          <div
+            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 text-sm"
+            role="alert"
+          >
+            <p className="font-semibold">Could not load clients from the database</p>
+            <p className="mt-1 text-amber-900/90">{loadError}</p>
+          </div>
+        ) : null}
         <div>
           <h1 className="font-semibold text-2xl tracking-tight">Clients</h1>
           <p className="mt-1 max-w-2xl text-slate-600 text-sm">

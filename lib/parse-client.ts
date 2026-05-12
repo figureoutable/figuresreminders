@@ -57,6 +57,37 @@ function norm(s: string): string {
   return s.trim().toLowerCase();
 }
 
+/**
+ * Single VAT “anchor” month (1–12) from user input: plain number, month name,
+ * or phrases like "31 March" (first month token wins).
+ */
+export function parseVatAnchorMonthFromUserInput(raw: string): number | null {
+  const t = raw.trim();
+  if (!t) {
+    return null;
+  }
+  if (/^\d{1,2}$/.test(t)) {
+    const n = Number(t);
+    if (n >= 1 && n <= 12) {
+      return n;
+    }
+    return null;
+  }
+  const tokens = t
+    .toLowerCase()
+    .split(/[^a-z]+/i)
+    .filter(Boolean);
+  for (const tok of tokens) {
+    const m = MONTHS[norm(tok)];
+    if (m) {
+      return m;
+    }
+  }
+  const stripped = norm(t.replace(/^\d+\s+/, "").replace(/\s+\d+$/, ""));
+  const m2 = MONTHS[stripped];
+  return m2 ?? null;
+}
+
 /** Parses "31 March", "31/3", "31-03", "March 31" into yyyy-MM-dd (year inferred). */
 function parseFlexibleDate(
   raw: string,
@@ -253,8 +284,7 @@ export function clientPayloadFromFields(fields: ParsedClientFields): {
   vat_quarter_end_month: number | null;
   payroll_active: boolean;
 } {
-  const vat = fields.vat_quarter_end_month.trim();
-  const vatNum = vat ? Number(vat) : NaN;
+  const vatMonth = parseVatAnchorMonthFromUserInput(fields.vat_quarter_end_month);
   return {
     name: fields.name.trim(),
     year_end_date: fields.year_end_date.trim() || null,
@@ -263,10 +293,7 @@ export function clientPayloadFromFields(fields: ParsedClientFields): {
     accounts_filing_due_date:
       fields.accounts_filing_due_date.trim() || null,
     self_assessment_date: fields.self_assessment_date.trim() || null,
-    vat_quarter_end_month:
-      vat && !Number.isNaN(vatNum) && vatNum >= 1 && vatNum <= 12
-        ? vatNum
-        : null,
+    vat_quarter_end_month: vatMonth,
     payroll_active: fields.payroll_active === "true",
   };
 }

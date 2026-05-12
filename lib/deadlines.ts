@@ -88,8 +88,8 @@ function nextSelfAssessmentDeadline(
   return startOfDay(jan);
 }
 
-/** Four calendar months that close VAT quarters for a given anchor month (1–12). */
-function vatQuarterEndMonths(anchor1to12: number): number[] {
+/** Four calendar months that contain quarter-end dates for a chosen anchor month (1–12). */
+export function vatQuarterEndMonths(anchor1to12: number): number[] {
   const zeroBased = ((anchor1to12 - 1) % 12) + 12;
   const a = zeroBased % 12;
   return [0, 1, 2, 3].map((k) => ((a + k * 3) % 12) + 1);

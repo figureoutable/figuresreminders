@@ -33,7 +33,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { ParseMeta } from "@/lib/parse-client";
 import type { ParsedClientFields } from "@/lib/parse-client";
-import { clientPayloadFromFields, isIsoDate } from "@/lib/parse-client";
+import {
+  clientPayloadFromFields,
+  isIsoDate,
+  parseVatAnchorMonthFromUserInput,
+} from "@/lib/parse-client";
+import { vatQuarterEndMonths } from "@/lib/deadlines";
 
 export type ClientEntity = {
   id: string;
@@ -62,6 +67,15 @@ const MONTH_NAMES = [
   "Nov",
   "Dec",
 ];
+
+function labelsForVatAnchor(
+  anchor: number | null | undefined
+): string | null {
+  if (anchor == null || anchor < 1 || anchor > 12) {
+    return null;
+  }
+  return vatQuarterEndMonths(anchor).map((m) => MONTH_NAMES[m]).join(", ");
+}
 
 function emptyFields(): ParsedClientFields {
   return {
@@ -116,6 +130,8 @@ function ClientFieldGrid({
   const m: ParseMeta = meta ? { ...allTrueMeta(), ...meta } : allTrueMeta();
   const fieldClass = (parsed: boolean) =>
     parsed ? "border-slate-200" : "border-amber-400 ring-1 ring-amber-300";
+  const vatAnchor = parseVatAnchorMonthFromUserInput(fields.vat_quarter_end_month);
+  const vatQuarterLabelLine = labelsForVatAnchor(vatAnchor);
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="space-y-1.5 sm:col-span-2">
@@ -189,13 +205,18 @@ function ClientFieldGrid({
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor={`${idPrefix}-vat`}>VAT quarter end month (1–12)</Label>
-        <Input
-          className={fieldClass(m.vatParsed)}
+        <Label htmlFor={`${idPrefix}-vat`}>VAT quarter end</Label>
+        <p className="text-slate-500 text-xs">
+          Pick <strong>one</strong> month when a quarter closes (last calendar day of that
+          month). The app schedules the same pattern every three months — you do not enter
+          the other quarters separately.
+        </p>
+        <select
+          className={cn(
+            "h-8 w-full min-w-0 rounded-lg border bg-transparent px-2.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+            fieldClass(m.vatParsed)
+          )}
           id={`${idPrefix}-vat`}
-          inputMode="numeric"
-          max={12}
-          min={1}
           onChange={(e) =>
             setFields((f) => ({
               ...f,
@@ -203,7 +224,21 @@ function ClientFieldGrid({
             }))
           }
           value={fields.vat_quarter_end_month}
-        />
+        >
+          <option value="">No VAT</option>
+          {[
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+          ].map((mo) => (
+            <option key={mo} value={String(mo)}>
+              {MONTH_NAMES[mo]}
+            </option>
+          ))}
+        </select>
+        {vatQuarterLabelLine ? (
+          <p className="text-slate-600 text-xs">
+            Quarter-end months (last day of each): {vatQuarterLabelLine}
+          </p>
+        ) : null}
       </div>
       <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 sm:col-span-2">
         <div>
@@ -707,7 +742,7 @@ export default function ClientsView({
                   <TableHead>Confirmation</TableHead>
                   <TableHead>Accounts filing</TableHead>
                   <TableHead>Self Assessment</TableHead>
-                  <TableHead>VAT end month</TableHead>
+                  <TableHead>VAT quarters</TableHead>
                   <TableHead>Payroll</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -755,10 +790,8 @@ export default function ClientsView({
                             })
                           : "—"}
                       </TableCell>
-                      <TableCell>
-                        {c.vat_quarter_end_month != null
-                          ? MONTH_NAMES[c.vat_quarter_end_month]
-                          : "—"}
+                      <TableCell className="max-w-[14rem] text-sm">
+                        {labelsForVatAnchor(c.vat_quarter_end_month) ?? "—"}
                       </TableCell>
                       <TableCell>{c.payroll_active ? "Yes" : "No"}</TableCell>
                       <TableCell className="text-right">

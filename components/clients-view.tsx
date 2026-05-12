@@ -145,6 +145,10 @@ function ClientFieldGrid({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor={`${idPrefix}-ye`}>Year end</Label>
+        <p className="text-slate-500 text-xs">
+          Corporation tax deadlines are based on year end, normalised to the{" "}
+          <strong>last day of that month</strong> if needed.
+        </p>
         <Input
           className={fieldClass(m.yearEndParsed)}
           id={`${idPrefix}-ye`}
@@ -157,6 +161,11 @@ function ClientFieldGrid({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor={`${idPrefix}-cs`}>Confirmation statement date</Label>
+        <p className="text-slate-500 text-xs">
+          Reminders use the <strong>calendar month</strong> of this date: each year the
+          deadline is the <strong>last day of that month</strong>, with the flag on the{" "}
+          <strong>last day of the previous month</strong>.
+        </p>
         <Input
           className={fieldClass(m.confirmationParsed)}
           id={`${idPrefix}-cs`}
@@ -173,8 +182,8 @@ function ClientFieldGrid({
       <div className="space-y-1.5 sm:col-span-2">
         <Label htmlFor={`${idPrefix}-af`}>Accounts filing due</Label>
         <p className="text-slate-500 text-xs">
-          Statutory accounts filing deadline (Companies House{" "}
-          <code className="text-xs">next_accounts.due_on</code>).
+          Same rhythm as confirmation: each year, <strong>last day of this date’s month</strong>{" "}
+          as the deadline; flag on the <strong>last day of the month before</strong>.
         </p>
         <Input
           className={fieldClass(m.accountsFilingParsed)}
@@ -242,9 +251,9 @@ function ClientFieldGrid({
       </div>
       <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 sm:col-span-2">
         <div>
-          <Label htmlFor={`${idPrefix}-pr`}>Payroll active</Label>
+          <Label htmlFor={`${idPrefix}-pr`}>Payroll / PAYE active</Label>
           <p className="text-slate-500 text-xs">
-            Monthly payroll reminders on the 26th.
+            Monthly reminders on the <strong>last day of each month</strong>.
           </p>
         </div>
         <Switch

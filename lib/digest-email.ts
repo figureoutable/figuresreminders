@@ -34,6 +34,9 @@ export function actionNoteForDeadline(
   const daysToDeadline = d.daysUntilDeadline;
   const months = Math.max(0, differenceInMonths(d.deadlineDate, today));
 
+  if (d.type === OBLIGATION_TYPES.ACCOUNTS_FILING) {
+    return `Chase statutory accounts for ${d.clientName} — filing deadline (month-end) approaching.`;
+  }
   if (d.type === OBLIGATION_TYPES.CORP_TAX_FILING) {
     return `Request year end records from ${d.clientName} — CT600 filing due in ${months > 0 ? `${months} months` : `${Math.max(0, daysToDeadline)} days`}.`;
   }
@@ -44,7 +47,7 @@ export function actionNoteForDeadline(
     return `Chase VAT records from ${d.clientName} — VAT quarter ended this week.`;
   }
   if (d.type === OBLIGATION_TYPES.PAYROLL) {
-    return `Run monthly payroll tasks for ${d.clientName} — payroll filing date approaching.`;
+    return `Run PAYE / payroll for ${d.clientName} — month-end filing rhythm.`;
   }
   if (d.type === OBLIGATION_TYPES.SELF_ASSESSMENT) {
     return `Chase Self Assessment information from ${d.clientName} — filing deadline approaching.`;

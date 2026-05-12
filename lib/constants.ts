@@ -5,6 +5,8 @@
  */
 export const OBLIGATION_TYPES = {
   CONFIRMATION: "Confirmation Statement",
+  /** Companies House statutory accounts (from `accounts_filing_due_date`) */
+  ACCOUNTS_FILING: "Statutory accounts filing",
   /** CT600 filing — 12 months after year end */
   CORP_TAX_FILING: "Corporation Tax (CT600 filing)",
   /** Corporation tax payment — 9 months + 1 day after year end */
@@ -21,6 +23,7 @@ export type ObligationType =
 export const FILTER_IDS = [
   "all",
   "confirmation",
+  "statutory_accounts",
   "corp_tax",
   "self_assessment",
   "payroll",
@@ -32,6 +35,7 @@ export type FilterId = (typeof FILTER_IDS)[number];
 /** Human-readable filter labels for toolbar buttons. */
 export const FILTER_LABELS: Record<Exclude<FilterId, "all">, string> = {
   confirmation: "Confirmation Statement",
+  statutory_accounts: "Accounts filing",
   corp_tax: "Corp Tax",
   self_assessment: "Self Assessment",
   payroll: "Payroll",
@@ -48,6 +52,9 @@ export function deadlineMatchesFilter(
   }
   if (filter === "confirmation") {
     return obligationType === OBLIGATION_TYPES.CONFIRMATION;
+  }
+  if (filter === "statutory_accounts") {
+    return obligationType === OBLIGATION_TYPES.ACCOUNTS_FILING;
   }
   if (filter === "corp_tax") {
     return (

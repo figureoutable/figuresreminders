@@ -53,18 +53,22 @@ function daysBetween(from: Date, to: Date): number {
 }
 
 /**
- * Next calendar occurrence of the month/day taken from `anchor` that is on
- * or after `from` (Confirmation Statement annual cycle).
+ * Next occurrence of the **last calendar day** of `monthIndex` (0–11) on or after `from`.
+ * Used for confirmation statement and statutory accounts (month-anchored annual cycles).
  */
-function nextAnnualOccurrence(anchor: Date, from: Date): Date {
+function nextAnnualLastDayOfCalendarMonth(monthIndex: number, from: Date): Date {
   const fromDay = startOfDay(from);
-  const month = anchor.getMonth();
-  const date = anchor.getDate();
-  let candidate = new Date(fromDay.getFullYear(), month, date);
-  if (startOfDay(candidate) < fromDay) {
-    candidate = new Date(fromDay.getFullYear() + 1, month, date);
+  let y = fromDay.getFullYear();
+  let cand = startOfDay(lastDayOfMonth(new Date(y, monthIndex, 1)));
+  if (cand < fromDay) {
+    cand = startOfDay(lastDayOfMonth(new Date(y + 1, monthIndex, 1)));
   }
-  return startOfDay(candidate);
+  return cand;
+}
+
+/** Flag on the last day of the calendar month **before** the deadline’s month. */
+function flagLastDayOfMonthBeforeDeadline(deadline: Date): Date {
+  return startOfDay(lastDayOfMonth(addMonths(deadline, -1)));
 }
 
 /** UK Self Assessment online filing — next 31 January, unless a stored date is future. */
@@ -118,29 +122,21 @@ function collectVatDeadlines(
 }
 
 /**
- * Builds payroll rows (26th of month) for the next 12 upcoming months.
+ * Builds payroll / PAYE-style rows: **last day of each month** for the next 12 months.
  */
 function collectPayrollDeadlines(from: Date): Date[] {
   const out: Date[] = [];
   const fromDay = startOfDay(from);
-  let y = fromDay.getFullYear();
-  let mo = fromDay.getMonth();
-  let candidate = new Date(y, mo, 26);
-  if (startOfDay(candidate) < fromDay) {
-    mo += 1;
-    if (mo > 11) {
-      mo = 0;
-      y += 1;
-    }
-    candidate = new Date(y, mo, 26);
+  let iter = new Date(fromDay.getFullYear(), fromDay.getMonth(), 1);
+  let last = startOfDay(lastDayOfMonth(iter));
+  if (last < fromDay) {
+    iter = addMonths(iter, 1);
+    last = startOfDay(lastDayOfMonth(iter));
   }
   for (let i = 0; i < 12; i++) {
-    const yy = candidate.getFullYear();
-    const mm = candidate.getMonth();
-    out.push(startOfDay(new Date(yy, mm, 26)));
-    const nm = mm + 1;
-    candidate =
-      nm > 11 ? new Date(yy + 1, 0, 26) : new Date(yy, nm, 26);
+    out.push(last);
+    iter = addMonths(iter, 1);
+    last = startOfDay(lastDayOfMonth(iter));
   }
   return out;
 }
@@ -148,12 +144,13 @@ function collectPayrollDeadlines(from: Date): Date[] {
 /**
  * Main generator: maps stored client fields → concrete deadlines + flags.
  *
- * Flag rules (per product spec):
- * - Confirmation Statement: 30 days before deadline
- * - CT filing / payment: 5 months before each respective deadline
- * - Self Assessment: 4 months before deadline (Sept 30 when deadline is 31 Jan)
- * - Payroll: flag equals deadline (monthly rhythm)
- * - VAT: flag equals quarter-end date (action when quarter closes)
+ * Flag rules:
+ * - Confirmation Statement: annual **last day** of the stored month; flag = last day of prior month
+ * - Statutory accounts filing: same pattern when `accounts_filing_due_date` is set
+ * - CT filing / payment: 5 months before each respective deadline (year end normalised to month-end)
+ * - Self Assessment: 4 months before deadline (unchanged)
+ * - Payroll: deadline & flag = **last day of month** (PAYE-style monthly rhythm)
+ * - VAT: deadline & flag = **last day** of each quarter-end month (one stored anchor → four quarter months)
  */
 export function generateDeadlines(
   clients: ClientRow[],
@@ -163,25 +160,41 @@ export function generateDeadlines(
   const rows: GeneratedDeadline[] = [];
 
   for (const c of clients) {
-    // --- Confirmation Statement (annual from stored anchor date) ---
+    // --- Confirmation Statement (annual last day of anchor month) ---
     if (c.confirmation_statement_date) {
       const anchor = startOfDay(parseISO(c.confirmation_statement_date));
-      const deadline = nextAnnualOccurrence(anchor, today);
-      const flag = addDays(deadline, -30);
+      const deadline = nextAnnualLastDayOfCalendarMonth(anchor.getMonth(), today);
+      const flag = flagLastDayOfMonthBeforeDeadline(deadline);
       rows.push({
         clientId: c.id,
         clientName: c.name,
         type: OBLIGATION_TYPES.CONFIRMATION,
         deadlineDate: deadline,
-        flagDate: startOfDay(flag),
+        flagDate: flag,
         daysUntilDeadline: daysBetween(today, deadline),
-        daysUntilFlag: daysBetween(today, startOfDay(flag)),
+        daysUntilFlag: daysBetween(today, flag),
       });
     }
 
-    // --- Corporation tax (requires year end) ---
+    // --- Statutory accounts filing (Companies House `accounts_filing_due_date`) ---
+    if (c.accounts_filing_due_date) {
+      const anchor = startOfDay(parseISO(c.accounts_filing_due_date));
+      const deadline = nextAnnualLastDayOfCalendarMonth(anchor.getMonth(), today);
+      const flag = flagLastDayOfMonthBeforeDeadline(deadline);
+      rows.push({
+        clientId: c.id,
+        clientName: c.name,
+        type: OBLIGATION_TYPES.ACCOUNTS_FILING,
+        deadlineDate: deadline,
+        flagDate: flag,
+        daysUntilDeadline: daysBetween(today, deadline),
+        daysUntilFlag: daysBetween(today, flag),
+      });
+    }
+
+    // --- Corporation tax (requires year end, normalised to month-end) ---
     if (c.year_end_date) {
-      const ye = startOfDay(parseISO(c.year_end_date));
+      const ye = startOfDay(lastDayOfMonth(parseISO(c.year_end_date)));
       const filing = startOfDay(addYears(ye, 12));
       const payment = startOfDay(addDays(addMonths(ye, 9), 1));
 
@@ -226,7 +239,7 @@ export function generateDeadlines(
       });
     }
 
-    // --- Payroll (12 monthly 26th dates) ---
+    // --- Payroll (12 × last day of month — PAYE-style) ---
     if (c.payroll_active) {
       for (const d of collectPayrollDeadlines(today)) {
         rows.push({
@@ -241,17 +254,18 @@ export function generateDeadlines(
       }
     }
 
-    // --- VAT quarter ends ---
+    // --- VAT quarter ends (deadline = last day of quarter month; flag = prior month-end) ---
     if (c.vat_quarter_end_month != null) {
       for (const d of collectVatDeadlines(c.vat_quarter_end_month, today, 12)) {
+        const flag = flagLastDayOfMonthBeforeDeadline(d);
         rows.push({
           clientId: c.id,
           clientName: c.name,
           type: OBLIGATION_TYPES.VAT,
           deadlineDate: d,
-          flagDate: d,
+          flagDate: flag,
           daysUntilDeadline: daysBetween(today, d),
-          daysUntilFlag: daysBetween(today, d),
+          daysUntilFlag: daysBetween(today, flag),
         });
       }
     }

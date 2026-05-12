@@ -128,7 +128,7 @@ function Card({ item, dimmed, onHoverStart, onHoverEnd }: CardProps) {
         opacity: dimmed ? 0.5 : 1,
       }}
       className={cn(
-        "group relative flex flex-col gap-5 overflow-hidden rounded-2xl border p-6",
+        "group relative flex flex-col gap-4 overflow-hidden rounded-2xl border p-6",
         // Light
         "border-zinc-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
         // Dark
@@ -172,22 +172,22 @@ function Card({ item, dimmed, onHoverStart, onHoverEnd }: CardProps) {
         className="pointer-events-none absolute inset-y-0 left-0 w-[55%] -translate-x-full -skew-x-12 bg-linear-to-r from-transparent via-white/4.5 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[280%]"
       />
 
-      {/* Icon badge */}
-      <div
-        className="relative z-10 flex h-10 w-10 items-center justify-center rounded-xl"
-        style={{
-          background: `${item.color}18`,
-          boxShadow: `inset 0 0 0 1px ${item.color}30`,
-        }}
-      >
-        <Icon size={17} strokeWidth={1.9} style={{ color: item.color }} />
-      </div>
-
-      {/* Text */}
-      <div className="relative z-10 flex flex-col gap-2">
-        <h3 className="font-semibold text-[14px] text-zinc-900 tracking-tight dark:text-white">
-          {item.title}
-        </h3>
+      {/* Icon + title (same row) */}
+      <div className="relative z-10 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+            style={{
+              background: `${item.color}18`,
+              boxShadow: `inset 0 0 0 1px ${item.color}30`,
+            }}
+          >
+            <Icon size={17} strokeWidth={1.9} style={{ color: item.color }} />
+          </div>
+          <h3 className="font-bold text-2xl text-zinc-900 tabular-nums tracking-tight dark:text-white">
+            {item.title}
+          </h3>
+        </div>
         <p className="text-[12.5px] text-zinc-500 leading-relaxed dark:text-white/40">
           {item.description}
         </p>

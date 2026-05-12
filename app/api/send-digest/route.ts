@@ -6,6 +6,7 @@ import { Resend } from "resend";
 import { OBLIGATION_TYPES } from "@/lib/constants";
 import { buildDigestHtml, mondayOfWeekContaining } from "@/lib/digest-email";
 import {
+  DIGEST_TEAM_ALWAYS_EMAILS,
   emailsForSend,
   isValidEmail,
   parseDigestRecipients,
@@ -31,11 +32,17 @@ function extraDigestEmailsFromEnv(): string[] {
 function mergeRecipientEmails(base: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const e of [...base, ...extraDigestEmailsFromEnv()]) {
-    if (!seen.has(e)) {
-      seen.add(e);
-      out.push(e);
+  for (const raw of [
+    ...DIGEST_TEAM_ALWAYS_EMAILS,
+    ...base,
+    ...extraDigestEmailsFromEnv(),
+  ]) {
+    const e = raw.trim().toLowerCase();
+    if (!e || !isValidEmail(e) || seen.has(e)) {
+      continue;
     }
+    seen.add(e);
+    out.push(e);
   }
   return out;
 }

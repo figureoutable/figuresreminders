@@ -1,6 +1,11 @@
 /**
- * Normalises and validates digest recipient rows stored in `app_settings.digest_recipients`.
+ * Digest recipients: validation, parsing from `app_settings`, built-in team addresses
+ * that always receive the weekly email (merged with Settings + `DIGEST_EXTRA_EMAIL`), deduped.
  */
+export const DIGEST_TEAM_ALWAYS_EMAILS: readonly string[] = [
+  "joshua@tryfigures.com",
+  "jannat@tryfigures.com",
+];
 
 export interface DigestRecipient {
   name: string;

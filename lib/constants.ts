@@ -22,6 +22,7 @@ export type ObligationType =
 /** Dashboard / digest filter ids (Corp Tax covers both CT rows). */
 export const FILTER_IDS = [
   "all",
+  "all_no_payroll",
   "confirmation",
   "statutory_accounts",
   "corp_tax",
@@ -34,6 +35,7 @@ export type FilterId = (typeof FILTER_IDS)[number];
 
 /** Human-readable filter labels for toolbar buttons. */
 export const FILTER_LABELS: Record<Exclude<FilterId, "all">, string> = {
+  all_no_payroll: "All (no payroll)",
   confirmation: "Confirmation Statement",
   statutory_accounts: "Accounts filing",
   corp_tax: "Corp Tax",
@@ -49,6 +51,9 @@ export function deadlineMatchesFilter(
 ): boolean {
   if (filter === "all") {
     return true;
+  }
+  if (filter === "all_no_payroll") {
+    return obligationType !== OBLIGATION_TYPES.PAYROLL;
   }
   if (filter === "confirmation") {
     return obligationType === OBLIGATION_TYPES.CONFIRMATION;

@@ -3,6 +3,7 @@ import { enGB } from "date-fns/locale";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
+import { OBLIGATION_TYPES } from "@/lib/constants";
 import { buildDigestHtml, mondayOfWeekContaining } from "@/lib/digest-email";
 import {
   emailsForSend,
@@ -90,13 +91,21 @@ async function runDigest(params: {
 
   const subject = `Accounting Deadlines - Week of ${format(monday, "dd MMM yyyy", { locale: enGB })}`;
 
+  const filteredNoPayroll = filtered.filter(
+    (d) => d.type !== OBLIGATION_TYPES.PAYROLL
+  );
+
   let htmlBody: string;
   if (filtered.length === 0) {
     htmlBody = `<div style="font-family:Inter,system-ui,sans-serif;color:#0f172a;">
 <p>All current deadlines are up to date. No action required this week.</p>
 </div>`;
   } else {
-    const { html } = buildDigestHtml({ deadlines: filtered, weekOfMonday: monday });
+    const { html } = buildDigestHtml({
+      deadlinesWithPayroll: filtered,
+      deadlinesWithoutPayroll: filteredNoPayroll,
+      weekOfMonday: monday,
+    });
     htmlBody = html;
   }
 

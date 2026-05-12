@@ -1,6 +1,7 @@
 /**
  * Builds the Monday digest HTML (Resend) from pre-filtered deadline rows.
- * Sectioning rules mirror the product brief: urgent / this month / upcoming.
+ * Renders two banded views — including payroll and excluding payroll — then a
+ * single Action Required block (flags in the next 7 days) from the full list.
  */
 import { addDays, differenceInMonths, format, startOfDay } from "date-fns";
 import { enGB } from "date-fns/locale";
@@ -10,6 +11,14 @@ import type { GeneratedDeadline } from "@/lib/deadlines";
 
 function fmt(d: Date): string {
   return format(d, "dd MMM yyyy", { locale: enGB });
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 function urgentSection(d: GeneratedDeadline): boolean {
@@ -58,40 +67,21 @@ export function actionNoteForDeadline(
   return `Follow up with ${d.clientName} regarding ${d.type}.`;
 }
 
-export function buildDigestHtml(params: {
-  deadlines: GeneratedDeadline[];
-  weekOfMonday: Date;
-}): { html: string; actionLines: string[] } {
-  const today = startOfDay(params.weekOfMonday);
-  const urgent = params.deadlines.filter((d) => urgentSection(d));
-  const month = params.deadlines.filter((d) => dueThisMonthSection(d, today));
-  const upcoming = params.deadlines.filter(
-    (d) => !urgentSection(d) && !dueThisMonthSection(d, today)
-  );
-
-  const windowEnd = addDays(today, 7);
-  const actionLines = params.deadlines
-    .filter((d) => {
-      const f = startOfDay(d.flagDate);
-      return f >= today && f <= windowEnd;
-    })
-    .map((d) => actionNoteForDeadline(d, today));
-
-  const tableSection = (title: string, color: string, rows: GeneratedDeadline[]) => {
-    if (rows.length === 0) {
-      return "";
-    }
-    const body = rows
-      .map(
-        (r) => `<tr>
+function tableSection(title: string, color: string, rows: GeneratedDeadline[]): string {
+  if (rows.length === 0) {
+    return "";
+  }
+  const body = rows
+    .map(
+      (r) => `<tr>
   <td style="padding:8px;border:1px solid #e2e8f0;">${escapeHtml(r.clientName)}</td>
   <td style="padding:8px;border:1px solid #e2e8f0;">${escapeHtml(r.type)}</td>
   <td style="padding:8px;border:1px solid #e2e8f0;">${fmt(r.deadlineDate)}</td>
   <td style="padding:8px;border:1px solid #e2e8f0;">${r.daysUntilDeadline}</td>
 </tr>`
-      )
-      .join("\n");
-    return `<h3 style="color:${color};margin-top:24px;">${escapeHtml(title)}</h3>
+    )
+    .join("\n");
+  return `<h3 style="color:${color};margin-top:24px;">${escapeHtml(title)}</h3>
 <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:14px;">
 <thead><tr style="background:#f8fafc;">
   <th align="left" style="padding:8px;border:1px solid #e2e8f0;">Client</th>
@@ -101,13 +91,53 @@ export function buildDigestHtml(params: {
 </tr></thead>
 <tbody>${body}</tbody>
 </table>`;
-  };
+}
+
+/** Urgent / this month / upcoming tables for one deadline slice. */
+function digestBandTables(deadlines: GeneratedDeadline[], today: Date): string {
+  const urgent = deadlines.filter((d) => urgentSection(d));
+  const month = deadlines.filter((d) => dueThisMonthSection(d, today));
+  const upcoming = deadlines.filter(
+    (d) => !urgentSection(d) && !dueThisMonthSection(d, today)
+  );
+  const a = tableSection("Urgent (due within 30 days)", "#dc2626", urgent);
+  const b = tableSection("Due this month", "#d97706", month);
+  const c = tableSection("Upcoming", "#0d9488", upcoming);
+  if (!a && !b && !c) {
+    return `<p style="margin:0;color:#64748b;font-size:14px;">No deadlines in this list.</p>`;
+  }
+  return a + b + c;
+}
+
+function actionLinesForDeadlines(
+  deadlines: GeneratedDeadline[],
+  today: Date
+): string[] {
+  const windowEnd = addDays(today, 7);
+  return deadlines
+    .filter((d) => {
+      const f = startOfDay(d.flagDate);
+      return f >= today && f <= windowEnd;
+    })
+    .map((d) => actionNoteForDeadline(d, today));
+}
+
+export function buildDigestHtml(params: {
+  deadlinesWithPayroll: GeneratedDeadline[];
+  deadlinesWithoutPayroll: GeneratedDeadline[];
+  weekOfMonday: Date;
+}): { html: string; actionLines: string[] } {
+  const today = startOfDay(params.weekOfMonday);
+  const actionLines = [
+    ...new Set(actionLinesForDeadlines(params.deadlinesWithPayroll, today)),
+  ];
 
   const html = `<div style="font-family:Inter,system-ui,sans-serif;color:#0f172a;line-height:1.5;">
 <p style="margin:0 0 16px;">Good morning — here is your deadline digest for the week starting <strong>${fmt(today)}</strong>.</p>
-${tableSection("Urgent (due within 30 days)", "#dc2626", urgent)}
-${tableSection("Due this month", "#d97706", month)}
-${tableSection("Upcoming", "#0d9488", upcoming)}
+<h2 style="font-size:17px;font-weight:600;margin:20px 0 8px;color:#0f172a;">Including payroll</h2>
+${digestBandTables(params.deadlinesWithPayroll, today)}
+<h2 style="font-size:17px;font-weight:600;margin:28px 0 8px;color:#0f172a;">Excluding payroll</h2>
+${digestBandTables(params.deadlinesWithoutPayroll, today)}
 <h3 style="margin-top:28px;color:#0f172a;">Action Required</h3>
 ${
   actionLines.length
@@ -118,14 +148,6 @@ ${
 </div>`;
 
   return { html, actionLines };
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 export function mondayOfWeekContaining(date: Date): Date {

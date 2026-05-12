@@ -37,6 +37,8 @@ export interface GeneratedDeadline {
   flagDate: Date;
   daysUntilDeadline: number;
   daysUntilFlag: number;
+  /** Month-end accounting year end; set for corporation tax rows (status rules). */
+  yearEndDate?: Date | null;
 }
 
 /** Stable key matching `deadline_acknowledgements` uniqueness. */
@@ -107,12 +109,18 @@ function collectVatDeadlines(
   const ends = new Set(vatQuarterEndMonths(anchorMonth));
   const out: Date[] = [];
   const fromDay = startOfDay(from);
-  let iter = new Date(from.getFullYear(), from.getMonth(), 1);
-  for (let i = 0; i < 36 && out.length < maxCount; i++) {
+  const horizonEnd = startOfDay(addDays(fromDay, 365));
+  const lookback = startOfDay(addMonths(fromDay, -6));
+  let iter = new Date(lookback.getFullYear(), lookback.getMonth(), 1);
+  const endGuard = addMonths(horizonEnd, 2);
+  for (let i = 0; i < 54 && out.length < maxCount; i++) {
+    if (iter > endGuard) {
+      break;
+    }
     const month1 = iter.getMonth() + 1;
     if (ends.has(month1)) {
       const last = startOfDay(lastDayOfMonth(iter));
-      if (last >= fromDay) {
+      if (last >= lookback && last <= horizonEnd) {
         out.push(last);
       }
     }
@@ -207,6 +215,7 @@ export function generateDeadlines(
         flagDate: startOfDay(filingFlag),
         daysUntilDeadline: daysBetween(today, filing),
         daysUntilFlag: daysBetween(today, startOfDay(filingFlag)),
+        yearEndDate: ye,
       });
 
       const paymentFlag = addMonths(payment, -5);
@@ -218,6 +227,7 @@ export function generateDeadlines(
         flagDate: startOfDay(paymentFlag),
         daysUntilDeadline: daysBetween(today, payment),
         daysUntilFlag: daysBetween(today, startOfDay(paymentFlag)),
+        yearEndDate: ye,
       });
     }
 
@@ -256,7 +266,7 @@ export function generateDeadlines(
 
     // --- VAT quarter ends (deadline = last day of quarter month; flag = prior month-end) ---
     if (c.vat_quarter_end_month != null) {
-      for (const d of collectVatDeadlines(c.vat_quarter_end_month, today, 12)) {
+      for (const d of collectVatDeadlines(c.vat_quarter_end_month, today, 16)) {
         const flag = flagLastDayOfMonthBeforeDeadline(d);
         rows.push({
           clientId: c.id,
@@ -271,20 +281,45 @@ export function generateDeadlines(
     }
   }
 
-  return rows.filter(
-    (r) => startOfDay(r.deadlineDate) <= horizonEnd
-  );
+  const vatLookback = startOfDay(addMonths(today, -6));
+  return rows.filter((r) => {
+    const d = startOfDay(r.deadlineDate);
+    if (d > horizonEnd) {
+      return false;
+    }
+    if (r.type === OBLIGATION_TYPES.VAT) {
+      return d >= vatLookback;
+    }
+    return d >= today;
+  });
 }
 
-/** Status badge bucket for dashboard styling. */
-export type UrgencyBadge = "red" | "amber" | "green";
+/** Dashboard status column: red only for the three product rules; otherwise green. */
+export type DashboardStatusBadge = "red" | "green";
 
-export function urgencyFromDays(days: number): UrgencyBadge {
-  if (days <= 30) {
+export function dashboardStatusBadge(
+  row: Pick<GeneratedDeadline, "type" | "daysUntilDeadline"> & {
+    yearEndDate?: Date | null;
+  },
+  referenceDate: Date = new Date()
+): DashboardStatusBadge {
+  const t = startOfDay(referenceDate);
+
+  if (row.type === OBLIGATION_TYPES.PAYROLL && row.daysUntilDeadline < 7) {
     return "red";
   }
-  if (days <= 90) {
-    return "amber";
+  if (row.type === OBLIGATION_TYPES.VAT && row.daysUntilDeadline < 0) {
+    return "red";
+  }
+  if (
+    row.type === OBLIGATION_TYPES.CORP_TAX_PAYMENT &&
+    row.yearEndDate != null
+  ) {
+    const ye = startOfDay(lastDayOfMonth(row.yearEndDate));
+    const threeMonthsAfterYe = startOfDay(addMonths(ye, 3));
+    if (t >= threeMonthsAfterYe) {
+      return "red";
+    }
   }
   return "green";
 }

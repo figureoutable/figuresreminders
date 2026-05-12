@@ -16,6 +16,8 @@ export interface DashboardRowDTO {
   daysUntilFlag: number;
   acknowledged: boolean;
   acknowledgedBy: string | null;
+  /** Accounting year end (ISO); set for corporation tax rows for status rules. */
+  yearEndDate: string | null;
 }
 
 export function toDashboardDTO(rows: DeadlineViewRow[]): DashboardRowDTO[] {
@@ -30,5 +32,6 @@ export function toDashboardDTO(rows: DeadlineViewRow[]): DashboardRowDTO[] {
     daysUntilFlag: r.daysUntilFlag,
     acknowledged: r.acknowledged,
     acknowledgedBy: r.acknowledgedBy,
+    yearEndDate: r.yearEndDate?.toISOString() ?? null,
   }));
 }

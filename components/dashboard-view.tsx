@@ -40,15 +40,15 @@ import {
   deadlineMatchesFilter,
 } from "@/lib/constants";
 import type { DashboardRowDTO } from "@/lib/dashboard-serialize";
-import { urgencyFromDays, type UrgencyBadge } from "@/lib/deadlines";
+import {
+  dashboardStatusBadge,
+  type DashboardStatusBadge,
+} from "@/lib/deadlines";
 import { cn } from "@/lib/utils";
 
-function badgeVariant(u: UrgencyBadge): string {
+function badgeVariant(u: DashboardStatusBadge): string {
   if (u === "red") {
     return "bg-red-100 text-red-800 border-red-200";
-  }
-  if (u === "amber") {
-    return "bg-amber-100 text-amber-900 border-amber-200";
   }
   return "bg-emerald-100 text-emerald-900 border-emerald-200";
 }
@@ -269,7 +269,16 @@ export default function DashboardView({
                   </TableRow>
                 ) : (
                   visibleRows.map((row) => {
-                    const u = urgencyFromDays(row.daysUntilDeadline);
+                    const u = dashboardStatusBadge(
+                      {
+                        type: row.type,
+                        daysUntilDeadline: row.daysUntilDeadline,
+                        yearEndDate: row.yearEndDate
+                          ? parseISO(row.yearEndDate)
+                          : null,
+                      },
+                      new Date()
+                    );
                     const ack = row.acknowledged;
                     const open = pendingKey === row.key;
                     return (
@@ -353,11 +362,7 @@ export default function DashboardView({
                         <TableCell>{row.daysUntilDeadline}</TableCell>
                         <TableCell>
                           <Badge className={badgeVariant(u)} variant="outline">
-                            {u === "red"
-                              ? "0–30 days"
-                              : u === "amber"
-                                ? "31–90 days"
-                                : "91+ days"}
+                            {u === "red" ? "Attention" : "OK"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">

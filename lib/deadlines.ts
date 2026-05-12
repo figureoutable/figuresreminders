@@ -19,6 +19,8 @@ import { OBLIGATION_TYPES } from "@/lib/constants";
 export interface ClientRow {
   id: string;
   name: string;
+  /** Optional; display / CRM — not used when generating deadlines. */
+  owner?: string | null;
   year_end_date: string | null;
   confirmation_statement_date: string | null;
   /** Optional; not used by obligation generator (reference / Companies House). */

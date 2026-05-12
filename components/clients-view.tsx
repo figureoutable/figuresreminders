@@ -43,6 +43,7 @@ import { vatQuarterEndMonths } from "@/lib/deadlines";
 export type ClientEntity = {
   id: string;
   name: string;
+  owner: string | null;
   year_end_date: string | null;
   confirmation_statement_date: string | null;
   accounts_filing_due_date: string | null;
@@ -81,6 +82,7 @@ function labelsForVatAnchor(
 function emptyFields(): ParsedClientFields {
   return {
     name: "",
+    owner: "",
     year_end_date: "",
     confirmation_statement_date: "",
     accounts_filing_due_date: "",
@@ -93,6 +95,7 @@ function emptyFields(): ParsedClientFields {
 function fieldsFromClient(c: ClientEntity): ParsedClientFields {
   return {
     name: c.name,
+    owner: c.owner ?? "",
     year_end_date: c.year_end_date ?? "",
     confirmation_statement_date: c.confirmation_statement_date ?? "",
     accounts_filing_due_date: c.accounts_filing_due_date ?? "",
@@ -112,6 +115,7 @@ function allTrueMeta(): ParseMeta {
     selfAssessmentParsed: true,
     vatParsed: true,
     payrollParsed: true,
+    ownerParsed: true,
   };
 }
 
@@ -142,6 +146,20 @@ function ClientFieldGrid({
           id={`${idPrefix}-name`}
           onChange={(e) => setFields((f) => ({ ...f, name: e.target.value }))}
           value={fields.name}
+        />
+      </div>
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label htmlFor={`${idPrefix}-owner`}>Owner</Label>
+        <p className="text-slate-500 text-xs">
+          Who runs this client (initials or name). Shown in the client list only.
+        </p>
+        <Input
+          className={fieldClass(m.ownerParsed)}
+          id={`${idPrefix}-owner`}
+          maxLength={120}
+          onChange={(e) => setFields((f) => ({ ...f, owner: e.target.value }))}
+          placeholder="e.g. JL or Jamie Lee"
+          value={fields.owner}
         />
       </div>
       <div className="space-y-1.5">
@@ -748,6 +766,7 @@ export default function ClientsView({
               <TableHeader>
                 <TableRow className="bg-slate-50">
                   <TableHead>Name</TableHead>
+                  <TableHead>Owner</TableHead>
                   <TableHead>Year end</TableHead>
                   <TableHead>Confirmation</TableHead>
                   <TableHead>Accounts filing</TableHead>
@@ -760,7 +779,7 @@ export default function ClientsView({
               <TableBody>
                 {initialClients.length === 0 ? (
                   <TableRow>
-                    <TableCell className="py-10 text-center text-slate-500" colSpan={8}>
+                    <TableCell className="py-10 text-center text-slate-500" colSpan={9}>
                       No clients yet — use smart input or manual entry above.
                     </TableCell>
                   </TableRow>
@@ -768,6 +787,9 @@ export default function ClientsView({
                   initialClients.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.name}</TableCell>
+                      <TableCell className="text-slate-700 text-sm">
+                        {c.owner?.trim() ? c.owner : "—"}
+                      </TableCell>
                       <TableCell>
                         {c.year_end_date
                           ? format(parseISO(c.year_end_date), "dd MMM yyyy", {

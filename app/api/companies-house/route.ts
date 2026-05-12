@@ -23,6 +23,7 @@ function toParsedFields(
 ): ParsedClientFields {
   return {
     name: p.name,
+    owner: "",
     year_end_date: p.year_end_date,
     confirmation_statement_date: p.confirmation_statement_date,
     accounts_filing_due_date: p.accounts_filing_due_date,

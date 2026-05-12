@@ -6,6 +6,8 @@ import { format, parseISO, isValid } from "date-fns";
 
 export interface ParsedClientFields {
   name: string;
+  /** Account lead / partner (free text). */
+  owner: string;
   year_end_date: string;
   confirmation_statement_date: string;
   /** Statutory accounts filing due (e.g. Companies House `next_accounts.due_on`). */
@@ -24,6 +26,7 @@ export interface ParseMeta {
   selfAssessmentParsed: boolean;
   vatParsed: boolean;
   payrollParsed: boolean;
+  ownerParsed: boolean;
 }
 
 const MONTHS: Record<string, number> = {
@@ -252,9 +255,20 @@ export function parseClientDescription(input: string): {
     payrollParsed = true;
   }
 
+  let owner = "";
+  let ownerParsed = false;
+  const own = text.match(
+    /\b(?:owner|account\s*manager|manager)\s*[:#]?\s*([A-Za-z][A-Za-z\s.'-]{0,100})/i
+  );
+  if (own?.[1]) {
+    owner = own[1].trim().replace(/\s+/g, " ").slice(0, 120);
+    ownerParsed = owner.length > 0;
+  }
+
   return {
     fields: {
       name: name,
+      owner,
       year_end_date: yearEnd,
       confirmation_statement_date: confirmation,
       accounts_filing_due_date: "",
@@ -270,6 +284,7 @@ export function parseClientDescription(input: string): {
       selfAssessmentParsed: selfAssessmentParsed,
       vatParsed: vatParsed,
       payrollParsed: payrollParsed,
+      ownerParsed,
     },
   };
 }
@@ -277,6 +292,7 @@ export function parseClientDescription(input: string): {
 /** Converts form strings to types suitable for Supabase insert/update. */
 export function clientPayloadFromFields(fields: ParsedClientFields): {
   name: string;
+  owner: string | null;
   year_end_date: string | null;
   confirmation_statement_date: string | null;
   accounts_filing_due_date: string | null;
@@ -285,8 +301,10 @@ export function clientPayloadFromFields(fields: ParsedClientFields): {
   payroll_active: boolean;
 } {
   const vatMonth = parseVatAnchorMonthFromUserInput(fields.vat_quarter_end_month);
+  const ownerTrim = fields.owner.trim().replace(/\s+/g, " ").slice(0, 120);
   return {
     name: fields.name.trim(),
+    owner: ownerTrim.length > 0 ? ownerTrim : null,
     year_end_date: fields.year_end_date.trim() || null,
     confirmation_statement_date:
       fields.confirmation_statement_date.trim() || null,

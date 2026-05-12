@@ -172,25 +172,25 @@ function Card({ item, dimmed, onHoverStart, onHoverEnd }: CardProps) {
         className="pointer-events-none absolute inset-y-0 left-0 w-[55%] -translate-x-full -skew-x-12 bg-linear-to-r from-transparent via-white/4.5 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[280%]"
       />
 
-      {/* Icon + title (same row) */}
-      <div className="relative z-10 flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-            style={{
-              background: `${item.color}18`,
-              boxShadow: `inset 0 0 0 1px ${item.color}30`,
-            }}
-          >
-            <Icon size={17} strokeWidth={1.9} style={{ color: item.color }} />
-          </div>
-          <h3 className="font-bold text-2xl text-zinc-900 tabular-nums tracking-tight dark:text-white">
-            {item.title}
-          </h3>
+      {/* Icon, count, and label on one row */}
+      <div className="relative z-10 flex min-w-0 flex-wrap items-center gap-3">
+        <div
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+          style={{
+            background: `${item.color}18`,
+            boxShadow: `inset 0 0 0 1px ${item.color}30`,
+          }}
+        >
+          <Icon size={17} strokeWidth={1.9} style={{ color: item.color }} />
         </div>
-        <p className="text-[12.5px] text-zinc-500 leading-relaxed dark:text-white/40">
-          {item.description}
-        </p>
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0">
+          <span className="font-bold text-2xl text-zinc-900 tabular-nums tracking-tight dark:text-white">
+            {item.title}
+          </span>
+          <span className="text-[12.5px] text-zinc-500 leading-snug dark:text-white/40">
+            {item.description}
+          </span>
+        </div>
       </div>
 
       {/* Accent bottom line */}

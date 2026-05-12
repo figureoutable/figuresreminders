@@ -267,7 +267,9 @@ export default function SettingsView() {
             Each digest email has two deadline lists: first{" "}
             <strong>Reminders apart from payroll</strong>, then <strong>All reminders</strong>{" "}
             (including payroll). <strong>Send test (draft)</strong> uses the list above even if you
-            have not saved yet.
+            have not saved yet. Extra addresses can be set in the host environment as{" "}
+            <code className="rounded bg-slate-100 px-1 py-0.5 text-[11px]">DIGEST_EXTRA_EMAIL</code>{" "}
+            (comma-separated) — they receive every digest in addition to this list.
           </p>
 
           <div className="flex flex-wrap gap-2">

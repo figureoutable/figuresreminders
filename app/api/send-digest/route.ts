@@ -7,12 +7,38 @@ import { OBLIGATION_TYPES } from "@/lib/constants";
 import { buildDigestHtml, mondayOfWeekContaining } from "@/lib/digest-email";
 import {
   emailsForSend,
+  isValidEmail,
   parseDigestRecipients,
   validateRecipientsPayload,
 } from "@/lib/digest-recipients";
 import { generateDeadlines } from "@/lib/deadlines";
 import type { ClientRow } from "@/lib/deadlines";
 import { createServiceSupabase } from "@/lib/supabase/admin";
+
+/** Optional extra inbox(es) from env — comma/space/semicolon separated, deduped with DB list. */
+function extraDigestEmailsFromEnv(): string[] {
+  const raw = (process.env.DIGEST_EXTRA_EMAIL ?? "").trim();
+  if (!raw) {
+    return [];
+  }
+  return raw
+    .split(/[\s,;]+/)
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+    .filter((e) => isValidEmail(e));
+}
+
+function mergeRecipientEmails(base: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const e of [...base, ...extraDigestEmailsFromEnv()]) {
+    if (!seen.has(e)) {
+      seen.add(e);
+      out.push(e);
+    }
+  }
+  return out;
+}
 
 /**
  * Shared digest pipeline used by the Vercel cron (GET) and the Settings
@@ -62,10 +88,14 @@ async function runDigest(params: {
     )
   );
   const override = params.overrideEmails?.filter(Boolean) ?? [];
-  const recipients = override.length > 0 ? override : fromDb;
+  const baseRecipients = override.length > 0 ? override : fromDb;
+  const recipients = mergeRecipientEmails(baseRecipients);
   if (recipients.length === 0) {
     return NextResponse.json(
-      { error: "Add at least one digest recipient in Settings." },
+      {
+        error:
+          "Add at least one digest recipient in Settings, or set DIGEST_EXTRA_EMAIL in the server environment.",
+      },
       { status: 400 }
     );
   }

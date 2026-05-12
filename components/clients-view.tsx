@@ -751,7 +751,7 @@ export default function ClientsView({
                   <TableHead>Confirmation</TableHead>
                   <TableHead>Accounts filing</TableHead>
                   <TableHead>Self Assessment</TableHead>
-                  <TableHead>VAT quarters</TableHead>
+                  <TableHead className="min-w-[11rem]">VAT (quarter ends)</TableHead>
                   <TableHead>Payroll</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -799,8 +799,31 @@ export default function ClientsView({
                             })
                           : "—"}
                       </TableCell>
-                      <TableCell className="max-w-[14rem] text-sm">
-                        {labelsForVatAnchor(c.vat_quarter_end_month) ?? "—"}
+                      <TableCell className="max-w-[16rem] align-top text-sm leading-snug">
+                        {c.vat_quarter_end_month != null &&
+                        c.vat_quarter_end_month >= 1 &&
+                        c.vat_quarter_end_month <= 12 ? (
+                          <div className="space-y-1">
+                            <div>
+                              <span className="text-slate-500 text-xs">
+                                Saved anchor (month you chose):{" "}
+                              </span>
+                              <span className="font-medium text-[#0F172A]">
+                                {MONTH_NAMES[c.vat_quarter_end_month]}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 text-xs">
+                                All VAT period ends (last day of each month):{" "}
+                              </span>
+                              <span className="font-medium text-[#0F172A]">
+                                {labelsForVatAnchor(c.vat_quarter_end_month)}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell>{c.payroll_active ? "Yes" : "No"}</TableCell>
                       <TableCell className="text-right">

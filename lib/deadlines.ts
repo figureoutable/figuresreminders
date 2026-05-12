@@ -144,19 +144,19 @@ function collectPayrollDeadlines(from: Date): Date[] {
 /**
  * Main generator: maps stored client fields → concrete deadlines + flags.
  *
- * Flag rules:
- * - Confirmation Statement: annual **last day** of the stored month; flag = last day of prior month
- * - Statutory accounts filing: same pattern when `accounts_filing_due_date` is set
- * - CT filing / payment: 5 months before each respective deadline (year end normalised to month-end)
- * - Self Assessment: 4 months before deadline (unchanged)
- * - Payroll: deadline & flag = **last day of month** (PAYE-style monthly rhythm)
- * - VAT: deadline & flag = **last day** of each quarter-end month (one stored anchor → four quarter months)
+ * Flag rules: confirmation & statutory accounts use month-end deadlines and prior
+ * month-end flags; CT uses five-month lead flags; SA four months; payroll month-end;
+ * VAT quarter month-ends with prior month-end flags.
+ *
+ * Only deadlines **on or before** `referenceDate + 365 days` are returned so
+ * dashboard / digest lists stay within roughly one year.
  */
 export function generateDeadlines(
   clients: ClientRow[],
   referenceDate: Date = new Date()
 ): GeneratedDeadline[] {
   const today = startOfDay(referenceDate);
+  const horizonEnd = startOfDay(addDays(today, 365));
   const rows: GeneratedDeadline[] = [];
 
   for (const c of clients) {
@@ -271,7 +271,9 @@ export function generateDeadlines(
     }
   }
 
-  return rows;
+  return rows.filter(
+    (r) => startOfDay(r.deadlineDate) <= horizonEnd
+  );
 }
 
 /** Status badge bucket for dashboard styling. */

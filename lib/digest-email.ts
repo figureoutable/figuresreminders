@@ -1,7 +1,7 @@
 /**
  * Builds the Monday digest HTML (Resend) from pre-filtered deadline rows.
- * Renders two banded views — including payroll and excluding payroll — then a
- * single Action Required block (flags in the next 7 days) from the full list.
+ * Renders two banded views — first without payroll, then all reminders including
+ * payroll — then a single Action Required block (flags in the next 7 days).
  */
 import { addDays, differenceInMonths, format, startOfDay } from "date-fns";
 import { enGB } from "date-fns/locale";
@@ -134,10 +134,10 @@ export function buildDigestHtml(params: {
 
   const html = `<div style="font-family:Inter,system-ui,sans-serif;color:#0f172a;line-height:1.5;">
 <p style="margin:0 0 16px;">Good morning — here is your deadline digest for the week starting <strong>${fmt(today)}</strong>.</p>
-<h2 style="font-size:17px;font-weight:600;margin:20px 0 8px;color:#0f172a;">Including payroll</h2>
-${digestBandTables(params.deadlinesWithPayroll, today)}
-<h2 style="font-size:17px;font-weight:600;margin:28px 0 8px;color:#0f172a;">Excluding payroll</h2>
+<h2 style="font-size:17px;font-weight:600;margin:20px 0 8px;color:#0f172a;">Reminders apart from payroll:</h2>
 ${digestBandTables(params.deadlinesWithoutPayroll, today)}
+<h2 style="font-size:17px;font-weight:600;margin:28px 0 8px;color:#0f172a;">All reminders:</h2>
+${digestBandTables(params.deadlinesWithPayroll, today)}
 <h3 style="margin-top:28px;color:#0f172a;">Action Required</h3>
 ${
   actionLines.length

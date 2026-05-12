@@ -264,9 +264,10 @@ export default function SettingsView() {
           <p className="text-slate-500 text-xs">
             Everyone listed here gets the same digest. Save after changing the list.{" "}
             <strong>Send now</strong> emails everyone last saved in the database.{" "}
-            Each digest email has two deadline lists: one including payroll, and one excluding
-            payroll. <strong>Send test (draft)</strong> uses the list above even if you have not
-            saved yet.
+            Each digest email has two deadline lists: first{" "}
+            <strong>Reminders apart from payroll</strong>, then <strong>All reminders</strong>{" "}
+            (including payroll). <strong>Send test (draft)</strong> uses the list above even if you
+            have not saved yet.
           </p>
 
           <div className="flex flex-wrap gap-2">

@@ -127,7 +127,12 @@ async function runDigest(params: {
       const key = `${d.clientId}|${d.type}|${format(d.deadlineDate, "yyyy-MM-dd")}`;
       return !ackSet.has(key);
     })
-    .filter((d) => d.daysUntilFlag >= 0)
+    /* Flag in the future/present = still in chase window. Also include deadlines due
+     * within 30 days or already overdue (negative days) so past-due VAT still appears
+     * in digest "Urgent" — matching the dashboard. */
+    .filter(
+      (d) => d.daysUntilFlag >= 0 || d.daysUntilDeadline <= 30
+    )
     .sort((a, b) => a.deadlineDate.getTime() - b.deadlineDate.getTime());
 
   const subject = `Accounting Deadlines - Week of ${format(monday, "dd MMM yyyy", { locale: enGB })}`;

@@ -95,7 +95,9 @@ function tableSection(title: string, color: string, rows: GeneratedDeadline[]): 
 
 /** Urgent / this month / upcoming tables for one deadline slice. */
 function digestBandTables(deadlines: GeneratedDeadline[], today: Date): string {
-  const urgent = deadlines.filter((d) => urgentSection(d));
+  const urgent = deadlines
+    .filter((d) => urgentSection(d))
+    .sort((a, b) => a.daysUntilDeadline - b.daysUntilDeadline);
   const month = deadlines.filter((d) => dueThisMonthSection(d, today));
   const upcoming = deadlines.filter(
     (d) => !urgentSection(d) && !dueThisMonthSection(d, today)

@@ -14,6 +14,10 @@ import {
 } from "@/lib/digest-recipients";
 import { generateDeadlines } from "@/lib/deadlines";
 import type { ClientRow } from "@/lib/deadlines";
+import {
+  looksLikeResendSandboxRecipientError,
+  resendSandboxHint,
+} from "@/lib/resend-hints";
 import { createServiceSupabase } from "@/lib/supabase/admin";
 
 /** Optional extra inbox(es) from env — comma/space/semicolon separated, deduped with DB list. */
@@ -151,15 +155,48 @@ async function runDigest(params: {
     process.env.RESEND_FROM_EMAIL?.trim() ||
     "Figures Reminders <onboarding@resend.dev>";
 
-  const { error: sendErr } = await resend.emails.send({
-    from,
-    to: recipients.length === 1 ? recipients[0]! : recipients,
-    subject,
-    html: htmlBody,
-  });
+  const deliveredTo: string[] = [];
+  const sendFailures: { email: string; message: string }[] = [];
 
-  if (sendErr) {
-    return NextResponse.json({ error: sendErr.message }, { status: 500 });
+  for (const to of recipients) {
+    const { error: oneErr } = await resend.emails.send({
+      from,
+      to,
+      subject,
+      html: htmlBody,
+    });
+    if (oneErr) {
+      sendFailures.push({ email: to, message: oneErr.message });
+    } else {
+      deliveredTo.push(to);
+    }
+  }
+
+  if (deliveredTo.length === 0) {
+    const detail = sendFailures.map((f) => `${f.email}: ${f.message}`).join("\n");
+    const hint =
+      sendFailures.some((f) => looksLikeResendSandboxRecipientError(f.message)) ?
+        `\n\n${resendSandboxHint()}`
+      : "";
+    return NextResponse.json(
+      { error: `${detail}${hint}` },
+      { status: 500 }
+    );
+  }
+
+  if (sendFailures.length > 0) {
+    const hint = sendFailures.some((f) =>
+      looksLikeResendSandboxRecipientError(f.message)
+    ) ?
+      resendSandboxHint()
+    : "";
+    return NextResponse.json({
+      ok: true,
+      sent: filtered.length,
+      deliveredTo,
+      sendFailures,
+      hint: hint || undefined,
+    });
   }
 
   return NextResponse.json({ ok: true, sent: filtered.length });

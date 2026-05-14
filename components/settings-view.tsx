@@ -125,9 +125,23 @@ export default function SettingsView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ test: true }),
       });
-      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      const j = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        hint?: string;
+        deliveredTo?: string[];
+        sendFailures?: { email: string; message: string }[];
+      };
       if (!res.ok) {
         alert(j.error ?? "Could not send digest.");
+        return;
+      }
+      if (j.sendFailures?.length) {
+        const failed = j.sendFailures
+          .map((f) => `${f.email}: ${f.message}`)
+          .join("\n");
+        alert(
+          `Sent to: ${(j.deliveredTo ?? []).join(", ")}\n\nFailed:\n${failed}${j.hint ? `\n\n${j.hint}` : ""}`
+        );
         return;
       }
       alert("Digest email sent to your saved recipients.");
@@ -151,9 +165,23 @@ export default function SettingsView() {
           digest_recipients: recipientsPayload(),
         }),
       });
-      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      const j = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        hint?: string;
+        deliveredTo?: string[];
+        sendFailures?: { email: string; message: string }[];
+      };
       if (!res.ok) {
         alert(j.error ?? "Test send failed.");
+        return;
+      }
+      if (j.sendFailures?.length) {
+        const failed = j.sendFailures
+          .map((f) => `${f.email}: ${f.message}`)
+          .join("\n");
+        alert(
+          `Sent to: ${(j.deliveredTo ?? []).join(", ")}\n\nFailed:\n${failed}${j.hint ? `\n\n${j.hint}` : ""}`
+        );
         return;
       }
       alert("Test digest sent to everyone in the list above (unsaved changes included).");
@@ -177,6 +205,26 @@ export default function SettingsView() {
 
         <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="font-semibold text-lg">Email settings</h2>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700 text-xs leading-relaxed">
+            <strong className="text-slate-900">Resend:</strong> To deliver to more than one real
+            address (e.g. Joshua and Jannat), verify{" "}
+            <strong>tryfigures.com</strong> in{" "}
+            <a
+              className="text-[#0D9488] underline"
+              href="https://resend.com/domains"
+              rel="noreferrer"
+              target="_blank"
+            >
+              Resend → Domains
+            </a>
+            , then set <code className="rounded bg-white px-1">RESEND_FROM_EMAIL</code> in Vercel
+            to an address on that domain (e.g.{" "}
+            <code className="rounded bg-white px-1">
+              Figures Reminders &lt;digest@tryfigures.com&gt;
+            </code>
+            ) and redeploy. The app sends one copy per recipient.
+          </div>
 
           {fetchError ? (
             <div

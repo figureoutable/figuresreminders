@@ -23,9 +23,23 @@ export function AppNav({ className }: { className?: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ test: true }),
       });
-      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      const j = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        hint?: string;
+        deliveredTo?: string[];
+        sendFailures?: { email: string; message: string }[];
+      };
       if (!res.ok) {
         alert(j.error ?? "Could not send digest.");
+        return;
+      }
+      if (j.sendFailures?.length) {
+        const failed = j.sendFailures
+          .map((f) => `${f.email}: ${f.message}`)
+          .join("\n");
+        alert(
+          `Sent to: ${(j.deliveredTo ?? []).join(", ")}\n\nFailed:\n${failed}${j.hint ? `\n\n${j.hint}` : ""}`
+        );
         return;
       }
       alert("Digest email sent to your saved recipients.");

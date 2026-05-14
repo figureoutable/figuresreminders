@@ -4,7 +4,6 @@
  */
 export const DIGEST_TEAM_ALWAYS_EMAILS: readonly string[] = [
   "joshua@tryfigures.com",
-  "jannat@tryfigures.com",
 ];
 
 export interface DigestRecipient {

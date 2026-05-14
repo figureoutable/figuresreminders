@@ -208,7 +208,7 @@ export default function SettingsView() {
 
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700 text-xs leading-relaxed">
             <strong className="text-slate-900">Resend:</strong> To deliver to more than one real
-            address (e.g. Joshua and Jannat), verify{" "}
+            address, verify{" "}
             <strong>tryfigures.com</strong> in{" "}
             <a
               className="text-[#0D9488] underline"
@@ -312,7 +312,7 @@ export default function SettingsView() {
           <p className="text-slate-500 text-xs">
             Everyone listed here gets the same digest. Save after changing the list.{" "}
             <strong>Send now</strong> emails everyone last saved in the database.{" "}
-            Two team inboxes always receive each digest as well (merged with this list, no
+            One team inbox always receives each digest as well (merged with this list, no
             duplicates). Each digest email has two deadline lists: first{" "}
             <strong>Reminders apart from payroll</strong>, then <strong>All reminders</strong>{" "}
             (including payroll). <strong>Send test (draft)</strong> uses the list above even if you

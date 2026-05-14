@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { friendlyClientsTableError } from "@/lib/supabase-errors";
 import { createServiceSupabase } from "@/lib/supabase/admin";
 import { clientPayloadFromFields, isIsoDate } from "@/lib/parse-client";
 import type { ParsedClientFields } from "@/lib/parse-client";
@@ -15,7 +16,10 @@ export async function GET() {
     .select("*")
     .order("created_at", { ascending: false });
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: friendlyClientsTableError(error.message) },
+      { status: 500 }
+    );
   }
   return NextResponse.json({ clients: data });
 }
@@ -52,7 +56,10 @@ export async function POST(req: Request) {
       .select("*")
       .single();
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: friendlyClientsTableError(error.message) },
+        { status: 500 }
+      );
     }
     return NextResponse.json({ client: data });
   } catch {
